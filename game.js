@@ -133,7 +133,7 @@ function whoShouldPlay(game){
 function getAmountPlayersInGame(game){
   var amount = 0
   game.players.forEach(member=>{
-    if(members.n_dices > 0)
+    if(member.n_dices > 0)
       amount++
   })
   return amount
@@ -329,7 +329,7 @@ module.exports = {
       whoShouldStartNextRound = getLastPlayerIndex(game)
       member = getLastPlayer(game)
     }
-    msg.channel.send(`${getMemberMention(members)} perdeu um dado!`)
+    msg.channel.send(`${getMemberMention(member)} perdeu um dado!`)
     member.n_dices--
     
     var n_players = getAmountPlayersInGame(game)
