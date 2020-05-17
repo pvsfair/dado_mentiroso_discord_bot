@@ -7,7 +7,13 @@ const commands = require('./commands')
 //  voiceChannelID: voiceChannelID,
 //  txtChannel:{},
 //  players: [],
-//  playerPlaying: userId
+//  playerPlaying: userId,
+//  playerPlaying: 0,
+//  guessAmount: 0,
+//  guessDice: 0,
+//  guessAmountBeforeBago:0,
+//  guessDiceBeforeBago:0,
+//  guesses: [],
 //}
 var games = []
 
@@ -62,7 +68,9 @@ function printPlayerOrder(game){
 function getAllDices(game){
   allDicesFromPlayers = "Os dados dos jogadores nesta rodada:\n"
   game.players.forEach(member=>{
-    allDicesFromPlayers += `${getMemberMention(member)} ${member.dices.map(d=>Dice[d]).join(' ')}\n`
+    if(member.n_dices <= 0)
+      return
+    allDicesFromPlayers += `${member.dices.map(d=>Dice[d]).join(' ')}`
   })
   return allDicesFromPlayers
 }
@@ -71,14 +79,16 @@ function rollDices(game){
   const {players} = game
   players.forEach(member=>{
     const member_dices = []
-    if(member.n_dices == 0){
-      player.send(getAllDices(game))
-    }
     for (let i = 0; i < member.n_dices; i++) {
       member_dices.push(Math.floor(Math.random()*6)+1)
     }
     member.dices = member_dices
+    if(member.n_dices <= 0)
+      return 
     member.send(member_dices.map(dice=>Dice[dice]).join(' '))
+  })
+  players.filter(m=>m.n_dices<=0).forEach(member=>{
+      member.send(getAllDices(game))
   })
 }
 
@@ -214,6 +224,7 @@ module.exports = {
     prunePlayers(game)
     if(game.players.length < 2){
       msg.channel.send("Não é possível iniciar um jogo com menos de duas pessoas")
+      return
     }
     game.status = GAME_STATUSES.IN_GAME
 
@@ -262,7 +273,7 @@ module.exports = {
     }
 
     const dadosEmJogo = countDicesInGame(game)
-    if(amount > dadosEmJogo){
+    if(amount > dadosEmJogo || amount < 1){
       msg.channel.send(`Aposta inválida! A quantidade de dados não pode ser maior do que a quantidade de dados em jogo. [${dadosEmJogo}]`)
       return 
     }
@@ -307,8 +318,9 @@ module.exports = {
       return
     }
     const lastGuess = {amount: game.guessAmount, dice: game.guessDice}
-    if(lastGuess.dice == 0){
+    if(lastGuess.dice == 0 || lastGuess.amount == 0){
       msg.channel.send("Você não pode duvidar na primeira jogada!")
+      return
     }
     totalDices = 0
     allDicesFromPlayers = "Os dados dos jogadores nesta rodada:\n"
@@ -319,15 +331,16 @@ module.exports = {
           totalDices++
       })
     })
+    
     game.txtChannel.send(allDicesFromPlayers)
     var member = {}
     var whoShouldStartNextRound = -1
-    if(lastGuess.amount >= totalDices){
-      whoShouldStartNextRound = getLastPlayerIndex(game)
-      member = getLastPlayer(game)
-    }else{
+    if(lastGuess.amount <= totalDices){
       whoShouldStartNextRound = game.playerPlaying
       member = getPlayerPlaying(game)
+    }else{
+      whoShouldStartNextRound = getLastPlayerIndex(game)
+      member = getLastPlayer(game)
     }
     msg.channel.send(`${getMemberMention(member)} perdeu um dado!`)
     member.n_dices--
@@ -335,7 +348,7 @@ module.exports = {
     var n_players = getAmountPlayersInGame(game)
 
     if(n_players == 1){
-      const winner = game.players.map(member=>member.n_dices > 0)[0]
+      const winner = game.players.filter(member => member.n_dices > 0)[0]
       game.txtChannel.send(`${getMemberMention(winner)} ganhou a partida! E merece toda a glória e pompa de um exímio jogador de Dadinho`)
       finishGame(game)
       return 

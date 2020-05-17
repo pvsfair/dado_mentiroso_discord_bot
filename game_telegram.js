@@ -72,7 +72,9 @@ function printPlayerOrder(game){
 function getAllDices(game){
   allDicesFromPlayers = "Os dados dos jogadores nesta rodada:\n"
   game.players.forEach(user=>{
-    allDicesFromPlayers += `${getUserMention(user)} ${user.dices.map(d=>Dice[d]).join(' ')}\n`
+    if(member.n_dices <= 0)
+      return
+    allDicesFromPlayers += `${user.dices.map(d=>Dice[d]).join(' ')}`
   })
   return allDicesFromPlayers
 }
@@ -88,7 +90,12 @@ function rollDices(game){
       member_dices.push(Math.floor(Math.random()*6)+1)
     }
     member.dices = member_dices
-    member.send(member_dices.map(dice=>Dice[dice]).join(' '))
+    if(member.n_dices <= 0)
+      return 
+    sendMessage(member.id, member_dices.map(dice=>Dice[dice]).join(' '))
+  })
+  players.filter(m=>m.n_dices <= 0).forEach(member=>{
+    sendMessage(member.id, getAllDices(game))
   })
 }
 
@@ -143,7 +150,7 @@ function whoShouldPlay(game){
 function getAmountPlayersInGame(game){
   var amount = 0
   game.players.forEach(member=>{
-    if(members.n_dices > 0)
+    if(member.n_dices > 0)
       amount++
   })
   return amount
@@ -211,11 +218,11 @@ module.exports = {
     }
     if(game.players.length < 2){
       sendMessage(chatId, "Não é possível iniciar um jogo com menos de duas pessoas")
+      return
     }
     game.status = GAME_STATUSES.IN_GAME
 
     shufflePlayers(game.players)
-
     printPlayerOrder(game)
     rollDices(game)
     whoShouldPlay(game)
@@ -259,18 +266,21 @@ module.exports = {
     
     if(amount == undefined || dice == undefined){
       sendMessage(chatId, "Aposta inválida!")
+      return
     }
 
     const dadosEmJogo = countDicesInGame(game)
-    if(amount > dadosEmJogo){
+    if(amount > dadosEmJogo || amount < 1){
       sendMessage(chatId, `Aposta inválida! A quantidade de dados não pode ser maior do que a quantidade de dados em jogo. [${dadosEmJogo}]`)
       return 
     }
     if(dice < 1 || dice > 6){
       sendMessage(chatId, 'Aposta inválida! A face do dado não pode ser menor que 1 ou maior que 6.')
+      return
     }
     if(game.guesses.includes({amount, dice})){
       sendMessage(chatId, 'Aposta inválida! Esta aposta já foi realizada nesta rodada.')
+      return
     }
     const lastGuess = {amount: game.guessAmount, dice: game.guessDice}
 
@@ -306,8 +316,9 @@ module.exports = {
       return
     }
     const lastGuess = {amount: game.guessAmount, dice: game.guessDice}
-    if(lastGuess.dice == 0){
+    if(lastGuess.dice == 0 || lastGuess.amount == 0){
       sendMessage(chatId, "Você não pode duvidar na primeira jogada!")
+      return
     }
     totalDices = 0
     allDicesFromPlayers = "Os dados dos jogadores nesta rodada:\n"
@@ -318,23 +329,24 @@ module.exports = {
           totalDices++
       })
     })
+
     sendMessage(chatId, allDicesFromPlayers)
     var member = {}
     var whoShouldStartNextRound = -1
-    if(lastGuess.amount >= totalDices){
+    if(lastGuess.amount <= totalDices){
       whoShouldStartNextRound = game.playerPlaying
       member = getPlayerPlaying(game)
     }else{
       whoShouldStartNextRound = getLastPlayerIndex(game)
       member = getLastPlayer(game)
     }
-    sendMessage(chatId, `${getUserMention(members)} perdeu um dado!`)
+    sendMessage(chatId, `${getUserMention(member)} perdeu um dado!`)
     member.n_dices--
     
     var n_players = getAmountPlayersInGame(game)
 
     if(n_players == 1){
-      const winner = game.players.map(member=>member.n_dices > 0)[0]
+      const winner = game.players.filter(member => member.n_dices > 0)[0]
       sendMessage(chatId, `${getUserMention(winner)} ganhou a partida! E merece toda a glória e pompa de um exímio jogador de Dadinho`)
       finishGame(game)
       return 
