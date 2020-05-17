@@ -1,6 +1,7 @@
 const logger = require('./logger')
 const commands = require('./commands').commands
 const bot = require('./bot')
+require('./home')
 
 bot.on('ready', function (evt) {
   logger.info('Connected');
