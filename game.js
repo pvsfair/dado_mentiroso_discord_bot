@@ -323,11 +323,11 @@ module.exports = {
     var member = {}
     var whoShouldStartNextRound = -1
     if(lastGuess.amount >= totalDices){
-      whoShouldStartNextRound = game.playerPlaying
-      member = getPlayerPlaying(game)
-    }else{
       whoShouldStartNextRound = getLastPlayerIndex(game)
       member = getLastPlayer(game)
+    }else{
+      whoShouldStartNextRound = game.playerPlaying
+      member = getPlayerPlaying(game)
     }
     msg.channel.send(`${getMemberMention(member)} perdeu um dado!`)
     member.n_dices--
