@@ -2,6 +2,11 @@ const game = require('./game')
 module.exports={
   commands:[
     {
+      command: '^(help|ajuda|h)$',
+      action: game.help,
+      help: 'Abaixo a lista de comandos do jogo:\n'
+    },
+    {
       command: '^(start|iniciar|s)$',
       action: game.start_game,
       help: 'Para iniciar um novo jogo digite !start ou !iniciar'

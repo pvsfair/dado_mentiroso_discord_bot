@@ -166,7 +166,7 @@ function finishGame(game){
 
 module.exports = {
   help(msg){
-    helpMessage = "Abaixo a lista de comandos do jogo:\n"
+    helpMessage = ""
     commands.forEach(cmd => {
       helpMessage += `${cmd.help}\n`
     });
