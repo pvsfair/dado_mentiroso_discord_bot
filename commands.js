@@ -1,40 +1,46 @@
 const game = require('./game')
-module.exports={
+const commands = {
   commands:[
     {
       command: '^(help|ajuda|h)$',
-      action: game.help,
-      help: 'Abaixo a lista de comandos do jogo:\n'
+      action: (msg)=>{
+        helpMessage = ""
+        commands.commands.forEach(cmd => {
+          helpMessage += `${cmd.help}\n`
+        });
+        msg.member.send(helpMessage)
+      },
+      help: 'Abaixo a lista de comandos do jogo:'
     },
     {
       command: '^(start|iniciar|s)$',
       action: game.start_game,
-      help: 'Para iniciar um novo jogo digite !start ou !iniciar'
+      help: '!start ou !iniciar - para iniciar um novo jogo'
     },
     {
       command: '^(ready|iwant|gogo|pronto|quero|bora|r)$',
       action: game.ready,
-      help: 'Para entrar numa partida em andamento digite !ready ou !bora'
+      help: '!ready ou !bora - para entrar numa partida em andamento digite'
     },
     {
       command: '^(play|jogar|p)$',
       action: game.play,
-      help: 'Para iniciar uma partida aguardando jogadores digite !play ou !jogar'
+      help: '!play ou !jogar - para iniciar uma partida aguardando jogadores digite'
     },
     {
       command: '^(finish|stop|parar|fechar|f)$',
       action: game.finish,
-      help: 'Para parar uma partida em andamento digite !finish ou !fechar'
+      help: '!finish ou !fechar - para parar uma partida em andamento digite'
     },
     {
       command: '^(dices|dados)$',
       action: game.dices,
-      help: 'Para checar quantos dados tem no jogo digite !dices ou !dados'
+      help: '!dices ou !dados - para checar quantos dados tem no jogo digite'
     },
     {
       command: '^(guess|chute|g)$',
       action: game.guess,
-      help: 'Para fazer um chute digite !guess [quantidade_de_dados] [dado_pra_apostar] ou somente ![quantidade_de_dados] [dado_pra_apostar]'
+      help: '!guess [quantidade_de_dados] [dado_pra_apostar] ou somente ![quantidade_de_dados] [dado_pra_apostar] - para fazer um chute digite'
     },
     {
       command: '(\\d+)',
@@ -44,7 +50,9 @@ module.exports={
     {
       command: '^(doubt|duvido|d)$',
       action: game.doubt,
-      help: 'Para duvidar do jogador anterior digite !doubt ou !duvido'
+      help: '!doubt ou !duvido - para duvidar do jogador anterior digite'
     }
   ]
 }
+
+module.exports=commands

@@ -165,12 +165,6 @@ function finishGame(game){
 }
 
 module.exports = {
-  help(msg){
-    helpMessage = ""
-    commands.forEach(cmd => {
-      helpMessage += `${cmd.help}\n`
-    });
-  },
   start_game(msg){
     voiceChannelID = msg.member.voice.channelID
     const found = get_game(voiceChannelID)
