@@ -183,6 +183,7 @@ module.exports = {
       member.n_dices = config.dices_per_game
       game.players.push(member)
     });
+    games.push(game)
     sendMessageToJoin(game)
     markPlayerReady(game, msg.member)
   },
@@ -217,7 +218,6 @@ module.exports = {
     game.status = GAME_STATUSES.IN_GAME
 
     shufflePlayers(game.players)
-    games.push(game)
     printPlayerOrder(game)
     rollDices(game)
     whoShouldPlay(game)
