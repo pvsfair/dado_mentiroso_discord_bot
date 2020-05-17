@@ -1,6 +1,7 @@
 const logger = require('./logger')
 const Dice = require('./dice_sides.json')
 const config = require('./config.json')
+const commands = require('./commands')
 
 //{
 //  voiceChannelID: voiceChannelID,
@@ -9,6 +10,11 @@ const config = require('./config.json')
 //  playerPlaying: userId
 //}
 var games = []
+
+var GAME_STATUSES={
+  WAITING_FOR_PLAYERS: 0,
+  IN_GAME: 1
+}
 
 function get_game(voiceChannelID){
   return games.find(game => game.voiceChannelID === voiceChannelID)
@@ -20,6 +26,7 @@ function getMemberMention(member){
 
 function gameFactory(voiceChannelID, txtChannel){
   return {
+    status: GAME_STATUSES.WAITING_FOR_PLAYERS,
     voiceChannelID: voiceChannelID,
     txtChannel: txtChannel,
     players: [],
@@ -132,12 +139,45 @@ function getAmountPlayersInGame(game){
   return amount
 }
 
+function sendMessageToJoin(game){
+  game.txtChannel.send('Quem quiser jogar esta partida é só mandar !bora\nE para iniciar o jogo basta digitar !jogar')
+}
+
+function markPlayerReady(game, member){
+  game.players.forEach(memberWaiting => {
+    if(memberWaiting.user.id == member.user.id){
+      memberWaiting.joined = !memberWaiting.joined
+      if(memberWaiting.joined)
+        game.txtChannel.send(`${getMemberMention(memberWaiting)} está na partida`)
+      else
+        game.txtChannel.send(`${getMemberMention(memberWaiting)} deixou a partida`)
+
+    }
+  });
+}
+
+function prunePlayers(game){
+  game.players = game.players.map(member => member.joined)
+}
+
+function finishGame(game){
+  games.splice(games.indexOf(game), 1)
+}
+
 module.exports = {
+  help(msg){
+    helpMessage = "Abaixo a lista de comandos do jogo:\n"
+    commands.forEach(cmd => {
+      helpMessage += `${cmd.help}\n`
+    });
+  },
   start_game(msg){
     voiceChannelID = msg.member.voice.channelID
     const found = get_game(voiceChannelID)
     if(found !== undefined){
       msg.channel.send("Um jogo já foi iniciado neste canal de voz")
+      if(game.status==GAME_STATUSES.WAITING_FOR_PLAYERS)
+        msg.channel.send("Pra entrar na partida basta mandar !bora neste canal, e pra iniciar a partida mande !jogar")
       return
     }
     game = gameFactory(voiceChannelID, msg.channel)
@@ -145,17 +185,60 @@ module.exports = {
     msg.member.voice.channel.members.forEach(member => {
       if(member.user.bot)
         return
+      member.joined = false
       member.n_dices = config.dices_per_game
       game.players.push(member)
     });
+    sendMessageToJoin(game)
+    markPlayerReady(game, msg.member)
+  },
+  ready(msg){
+    const game = get_game(msg.member.voice.channelID)
+    if(game === undefined){
+      msg.channel.send("Este canal de voz não tem um jogo em adamento, use o comando !start para iniciar um jogo")
+      return
+    }
+    if(game.status == GAME_STATUSES.IN_GAME){
+      msg.channel.send("Esta partida já começou, aguarde pra participar da próxima partida!")
+      return
+    }
+    if(game.status == GAME_STATUSES.WAITING_FOR_PLAYERS){
+      markPlayerReady(game, msg.member)
+    }
+  },
+  play(msg){
+    const game = get_game(msg.member.voice.channelID)
+    if(game === undefined){
+      msg.channel.send("Este canal de voz não tem um jogo em adamento, use o comando !start para iniciar um jogo")
+      return
+    }
+    if(game.status == GAME_STATUSES.IN_GAME){
+      msg.channel.send("Você não pode começar uma partida que já começou!")
+      return
+    }
+    prunePlayers(game)
+    if(game.players.length < 2){
+      msg.channel.send("Não é possível iniciar um jogo com menos de duas pessoas")
+    }
+    game.status = GAME_STATUSES.IN_GAME
+
     shufflePlayers(game.players)
     games.push(game)
     printPlayerOrder(game)
     rollDices(game)
     whoShouldPlay(game)
   },
+  finish(msg){
+    const game = get_game(msg.member.voice.channelID)
+    if(game === undefined){
+      msg.channel.send("Este canal de voz não tem um jogo em adamento, use o comando !start para iniciar um jogo")
+      return
+    }
+    msg.channel.send(`O jogo vai ser finalizado. Para iniciar um novo jogo digite !start`)
+    finishGame(game)
+  },
   dices(msg){
-    const game = get_game(msg.member.voice)
+    const game = get_game(msg.member.voice.channelID)
     if(game === undefined){
       msg.channel.send("Este canal de voz não tem um jogo em adamento, use o comando !start para iniciar um jogo")
       return
@@ -163,7 +246,7 @@ module.exports = {
     dicesInGame(game)
   },
   guess(msg){
-    const game = get_game(msg.member.voice)
+    const game = get_game(msg.member.voice.channelID)
     if(game === undefined){
       msg.channel.send("Este canal de voz não tem um jogo em adamento, use o comando !start para iniciar um jogo")
       return
@@ -222,7 +305,7 @@ module.exports = {
     console.log(amount, dice);
   },
   doubt(msg){
-    const game = get_game(msg.member.voice)
+    const game = get_game(msg.member.voice.channelID)
     if(game === undefined){
       msg.channel.send("Este canal de voz não tem um jogo em adamento, use o comando !start para iniciar um jogo")
       return
@@ -256,16 +339,19 @@ module.exports = {
     }
     msg.channel.send(`${getMemberMention(members)} perdeu um dado!`)
     member.n_dices--
-    if(member.n_dices <= 0){
-      member.n_dices = 0
-      game.txtChannel.send(`O jogador ${getMemberMention(member)} ficou sem dados! E agora irá ver todos os dados no inicio de cada rodada!`)
-    }
     
     var n_players = getAmountPlayersInGame(game)
 
     if(n_players == 1){
       const winner = game.players.map(member=>member.n_dices > 0)[0]
       game.txtChannel.send(`${getMemberMention(winner)} ganhou a partida! E merece toda a glória e pompa de um exímio jogador de Dadinho`)
+      finishGame(game)
+      return 
+    }
+
+    if(member.n_dices <= 0){
+      member.n_dices = 0
+      game.txtChannel.send(`O jogador ${getMemberMention(member)} ficou sem dados! E agora irá ver todos os dados no inicio de cada rodada!`)
     }
 
     while(game.players[whoShouldStartNextRound].n_dices <= 0){
