@@ -31,7 +31,7 @@ bot_discord.on('message', (msg)=> {
   if (content.substring(0, 1) == '!') {
       var args = content.substring(1).trim().split(' ');
       var cmd = args[0];
-     
+      console.log(cmd)
       args = args.splice(1);
       commands.discord.forEach(command => {
         if(cmd.match(new RegExp(command.command, 'gi'))){

@@ -157,7 +157,7 @@ function markPlayerReady(game, member){
 }
 
 function prunePlayers(game){
-  game.players = game.players.map(member => member.joined)
+  game.players = game.players.filter(member => member.joined)
 }
 
 function finishGame(game){
