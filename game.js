@@ -258,6 +258,7 @@ module.exports = {
     
     if(amount == undefined || dice == undefined){
       msg.channel.send("Aposta inválida!")
+      return
     }
 
     const dadosEmJogo = countDicesInGame(game)
@@ -267,10 +268,11 @@ module.exports = {
     }
     if(dice < 1 || dice > 6){
       msg.channel.send('Aposta inválida! A face do dado não pode ser menor que 1 ou maior que 6.')
+      return
     }
     if(game.guesses.includes({amount, dice})){
-      msg.channel.send('Aposta inválida! Esta aposta já foi realizada nesta rodada.'
-      )
+      msg.channel.send('Aposta inválida! Esta aposta já foi realizada nesta rodada.')
+      return
     }
     const lastGuess = {amount: game.guessAmount, dice: game.guessDice}
 
