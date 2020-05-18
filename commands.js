@@ -51,10 +51,15 @@ const commands = {
       help: 'Exemplo: !1 2 (um duque) ou !19 6 (dezenove senas)'
     },
     {
-      command: '^(doubt|duvido|d)$',
+      command: '^(doubt|duvido|nemfudendo|saidaquicomastuaspotoca|saidaquicomastuaspotocas|porranenhuma|levanta|levantaquenaotem|d)$',
       action: gameDiscord.doubt,
       help: '!doubt ou !duvido - para duvidar do jogador anterior digite'
-    }
+    },
+    // {
+    //   command: '^(players|jogadores)$',
+    //   action: gameDiscord.players,
+    //   help: '!players ou !jogadores'
+    // }
   ],
   telegram:[
     {

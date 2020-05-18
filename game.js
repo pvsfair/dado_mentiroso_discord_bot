@@ -58,7 +58,7 @@ function printPlayerOrder(game){
   var string = "A ordem dos jogadores:\n"
   var i = 0
   players.forEach(member=>{
-    if(member.n_dices <= 0)
+    if(member.n_dices <= 0 && member.joined)
       return
     string += `${++i} - ${getMemberMention(member)}\n`
   })
@@ -111,14 +111,16 @@ function getPlayerPlaying(game){
 }
 
 function getLastPlayerIndex(game){
-  var player = {}
-  var i = -1
-  do{
-    i = game.playerPlaying - 1
+  var i = game.playerPlaying - 1
+  if(i < 0)
+  i = game.players.length - 1
+  var player = game.players[i]
+  while (player.n_dices <= 0){
+    i--
     if(i < 0)
       i = game.players.length - 1
     player = game.players[i]
-  } while (player.n_dices <= 0)
+  } 
   return i
 }
 
@@ -127,12 +129,14 @@ function getLastPlayer(game){
 }
 
 function setNextPlayer(game){
-  var nextPlayer = -1
-  do{
-    nextPlayer = game.playerPlaying + 1
+  var nextPlayer = game.playerPlaying + 1
+  if(nextPlayer >= game.players.length)
+    nextPlayer = 0
+  while(game.players[nextPlayer].n_dices <= 0){
+    nextPlayer++
     if(nextPlayer >= game.players.length)
       nextPlayer = 0
-  }while(game.players[nextPlayer].n_dices <= 0)
+  }
   game.playerPlaying = nextPlayer
 }
 
@@ -196,6 +200,14 @@ module.exports = {
     games.push(game)
     sendMessageToJoin(game)
     markPlayerReady(game, msg.member)
+  },
+  players(msg){
+    const game = get_game(msg.member.voice.channelID)
+    if(game === undefined){
+      msg.channel.send("Este canal de voz não tem um jogo em adamento, use o comando !start para iniciar um jogo")
+      return
+    }
+    printPlayerOrder(game)
   },
   ready(msg){
     const game = get_game(msg.member.voice.channelID)
