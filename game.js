@@ -158,6 +158,16 @@ function sendMessageToJoin(game){
 }
 
 function markPlayerReady(game, member){
+  // member.n_dices = config.n_dices
+
+  // if(game.players.includes(member)){
+  //   game.players.splice(game.players.indexOf(member), 1)
+  //   game.txtChannel.send(`${getMemberMention(member)} deixou a partida`)
+  // }else{
+  //   game.players.push(member)
+  //   game.txtChannel.send(`${getMemberMention(member)} está na partida`)
+  // }
+
   game.players.forEach(memberWaiting => {
     if(memberWaiting.user.id == member.user.id){
       memberWaiting.joined = !memberWaiting.joined
@@ -180,6 +190,10 @@ function finishGame(game){
 
 module.exports = {
   start_game(msg){
+    if(msg.member.voice.channel == undefined){
+      msg.channel.send("Você precisa estar em uma sala de voz pra iniciar uma partida")
+      return
+    }
     voiceChannelID = msg.member.voice.channelID
     const found = get_game(voiceChannelID)
     if(found !== undefined){
@@ -371,6 +385,7 @@ module.exports = {
       game.txtChannel.send(`O jogador ${getMemberMention(member)} ficou sem dados! E agora irá ver todos os dados no inicio de cada rodada!`)
     }
 
+    //FIX
     while(game.players[whoShouldStartNextRound].n_dices <= 0){
       whoShouldStartNextRound++
     }

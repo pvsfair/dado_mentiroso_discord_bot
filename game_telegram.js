@@ -206,7 +206,7 @@ module.exports = {
       return
     }
     if(game.status == GAME_STATUSES.WAITING_FOR_PLAYERS){
-      markPlayerReady(game, msg.member)
+      markPlayerReady(game, msg.from)
     }
   },
   play(msg){
