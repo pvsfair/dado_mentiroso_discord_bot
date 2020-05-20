@@ -35,6 +35,8 @@ bot_discord.on('message', (msg)=> {
       args = args.splice(1);
       commands.discord.forEach(command => {
         if(cmd.match(new RegExp(command.command, 'gi'))){
+          if(cmd == cmd.toUpperCase())
+            msg.channel.send("NÃO GRITA CARAMBA!")
           command.action(msg)
         }
       });
